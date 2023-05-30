@@ -1,42 +1,62 @@
 <?php
 // Sample for querying the database, configuring and triggering jobs
 
-function triggerPrint($db, $mac, $queue) {
-	// Get the next queue position
-    $results = $db->query("SELECT position FROM Queues WHERE id = '".$queue."'");
+function triggerPrint($db, $mac, $queue)
+{
+
+    // Get the next queue position
+    $results = $db->query("SELECT position FROM Queues WHERE id = '" . $queue . "'");
     if (isset($results)) {
         $row = $results->fetchArray();    // fetch next row
 
         if (isset($row) && !empty($row)) {
             $pos = intval($row['position']);
 
-            $updateposition = $db->query("UPDATE Queues SET position = position + 1 WHERE id = '".$queue."'");
+            $updateposition = $db->query("UPDATE Queues SET position = position + 1 WHERE id = '" . $queue . "'");
 
-            if (empty($updateposition))
-            {
+            if (empty($updateposition)) {
                 http_response_code(500);
                 return;
             }
 
-            $updateprinting = $db->query("UPDATE Devices SET 'Printing' = '".$pos."' WHERE DeviceMac = '" .$mac."'");
+            $updateprinting = $db->query("UPDATE Devices SET 'Printing' = '" . $pos . "' WHERE DeviceMac = '" . $mac . "'");
 
-            if (empty($updateprinting))
-            {
+            if (empty($updateprinting)) {
                 // error message
                 http_response_code(500);
                 return;
             }
-
         }
 
-        print_r($pos);  
+        print_r($pos);
     }
 
-	return;
+    return;
 }
 
-function getQueueIDAndPrintingState($db, $mac) {
-    $results = $db->query("SELECT QueueID, Printing FROM Devices WHERE DeviceMac = '".$mac."'");
+function updateQueueHeader($db, int $queue)
+{
+    $results = $db->query("SELECT content,id FROM Invoices WHERE queue_id = '" . $queue . "' ORDER BY id ASC LIMIT 1");
+    if (isset($results)) {
+        $row = $results->fetchArray();    // fetch next row
+
+        if (isset($row) && !empty($row)) {
+            $content = $row['content'];
+
+            $updateHeader = $db->query("UPDATE Queues SET header = '{$content}', current_invoice = {$row['id']} WHERE id = {$queue}");
+
+            if (empty($updateHeader)) {
+                http_response_code(500);
+                return;
+            }
+        }
+    }
+    return;
+}
+
+function getQueueIDAndPrintingState($db, $mac)
+{
+    $results = $db->query("SELECT QueueID, Printing FROM Devices WHERE DeviceMac = '" . $mac . "'");
 
     if (isset($results)) {
         $row = $results->fetchArray();    // fetch next row
@@ -44,17 +64,17 @@ function getQueueIDAndPrintingState($db, $mac) {
         if (isset($row) && !empty($row)) {
             return array($row['QueueID'], $row['Printing']);
         }
-
     }
 
     return array(NULL, NULL);
 }
 
-function handleGETRequest() {
+function handleGETRequest()
+{
     $dbname = "simplequeue.sqlite";    // database file name
     $db = new SQLite3($dbname);
 
-    if (!empty($_GET['mac'])) {    
+    if (!empty($_GET['mac'])) {
         $mac = $_GET['mac'];
     }
 
@@ -70,18 +90,17 @@ function handleGETRequest() {
 
     list($queue, $printing) = getQueueIDAndPrintingState($db, $mac);
 
-    if (!isset($queue))
-    {
+    if (!isset($queue)) {
         http_response_code(400);
         return;    // Can't print a ticket if there is no queue assigned to this printer
     }
 
-    if ((isset($printing)) && ($printing > 0))
-    {
+    if ((isset($printing)) && ($printing > 0)) {
         http_response_code(200);
         return;    // Don't issue a ticket if one is currently printing
     }
 
+    updateQueueHeader($db, $queue);
     $pos = triggerPrint($db, $mac, $queue);
 
     $db->close();
@@ -92,4 +111,3 @@ if ($_SERVER['REQUEST_METHOD'] === "GET") {
 } else {
     http_response_code(405);
 }
-?>
