@@ -119,42 +119,44 @@ function handleCloudPRNTGetJob($db)
 {	
 	
     $mac = $_GET['mac'];
-    list($position, $queue, $width) = getDevicePrintingRequired($db, $mac);
-    updateQueueHeader($db,$queue);
+    if(!empty($mac)){
+	    list($position, $queue, $width) = getDevicePrintingRequired($db, $mac);
+	    updateQueueHeader($db,$queue);
 
-    $content_type = $_GET['type'];    // determine the media type that the cloudPRNT device is requesting
-    // and set it as the content type for this GET response
-    // create temporary files for storing the source print job and the version converted to the format requested by the cloudprnt device
-    // NOTE: using temporary files is usually very fast, because they will be generated in /tmp which is generally a RAM based filesystem
-    //       but, this depends on the OS and distribution. If these files will be written to physical media then it may harm performance
-    //       and cause unnecessary writes to disk.
-    $basefile = tempnam(sys_get_temp_dir(), "markup");
-    $markupfile = $basefile . ".stm";                                                    // cputil used the filename to determing the format of the job that it is to convert
-    $outputfile = tempnam(sys_get_temp_dir(), "output");
+	    $content_type = $_GET['type'];    // determine the media type that the cloudPRNT device is requesting
+	    // and set it as the content type for this GET response
+	    // create temporary files for storing the source print job and the version converted to the format requested by the cloudprnt device
+	    // NOTE: using temporary files is usually very fast, because they will be generated in /tmp which is generally a RAM based filesystem
+	    //       but, this depends on the OS and distribution. If these files will be written to physical media then it may harm performance
+	    //       and cause unnecessary writes to disk.
+	    $basefile = tempnam(sys_get_temp_dir(), "markup");
+	    $markupfile = $basefile . ".stm";                                                    // cputil used the filename to determing the format of the job that it is to convert
+	    $outputfile = tempnam(sys_get_temp_dir(), "output");
 
-        // Find which queue and position is pending for this printer
+		// Find which queue and position is pending for this printer
 
-    $ticketDesign = getQueuePrintParameters($db, $queue);                              // Get design fields for this queue
+	    $ticketDesign = getQueuePrintParameters($db, $queue);                              // Get design fields for this queue
 
-    renderMarkupJob($markupfile, $position, $queue, $ticketDesign);
+	    renderMarkupJob($markupfile, $position, $queue, $ticketDesign);
 
-    getCPConvertedJob($markupfile, $content_type, $width, $outputfile);                // convert the Star Markup job into the format requested
+	    getCPConvertedJob($markupfile, $content_type, $width, $outputfile);                // convert the Star Markup job into the format requested
 
-    // by the CloudPRNT device
-    header("Content-Type: " . $content_type);
-    header("Content-Length: " . filesize($outputfile));
+	    // by the CloudPRNT device
+	    header("Content-Type: " . $content_type);
+	    header("Content-Length: " . filesize($outputfile));
 
-    readfile($outputfile);                                                             // return the converted job as the GET response
+	    readfile($outputfile);                                                             // return the converted job as the GET response
 
-    // clean up the temporary files
-    unlink($basefile);
-    unlink($markupfile);
-    unlink($outputfile);
+	    // clean up the temporary files
+	    unlink($basefile);
+	    unlink($markupfile);
+	    unlink($outputfile);
 
-    
-    $db->query("UPDATE `Devices` SET Printing = 0 WHERE DeviceMac = '{$_GET['mac']}'");
-    $invoice_id = $db->query("SELECT current_invoice FROM Queues WHERE id = {$queue}")->fetchArray()['current_invoice'];
-    $db->query("DELETE FROM `Invoices` WHERE id = {$invoice_id}");
+
+	    $db->query("UPDATE `Devices` SET Printing = 0 WHERE DeviceMac = '{$_GET['mac']}'");
+	    $invoice_id = $db->query("SELECT current_invoice FROM Queues WHERE id = {$queue}")->fetchArray()['current_invoice'];
+	    $db->query("DELETE FROM `Invoices` WHERE id = {$invoice_id}");
+    }
 }
 
 
