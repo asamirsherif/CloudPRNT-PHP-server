@@ -216,8 +216,9 @@ function getDevicePrintingRequired($db, $mac)
     if (isset($results)) {
         $row = $results->fetchArray();    // fetch next row
 
-        if (!isset($row) || (count($row) < 1)) {
-            return array(NULL, NULL, NULL);
+        if (!isset($row) || gettype($row) == 'boolean' || (count( $row ) < 1) ) {
+             http_response_code(400);
+             die();
         } else {
             return array(intval($row['Printing']), intval($row['QueueID']), intval($row['DotWidth']));
         }
