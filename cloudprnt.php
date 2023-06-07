@@ -116,8 +116,10 @@ function getQueuePrintParameters($db, $queue)
 }
 
 function handleCloudPRNTGetJob($db)
-{
-    list($position, $queue, $width) = getDevicePrintingRequired($db, $_GET['mac']);
+{	
+	
+    $mac = $_GET['mac'];
+    list($position, $queue, $width) = getDevicePrintingRequired($db, $mac);
     updateQueueHeader($db,$queue);
 
     $content_type = $_GET['type'];    // determine the media type that the cloudPRNT device is requesting
