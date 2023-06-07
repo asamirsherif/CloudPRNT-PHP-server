@@ -118,8 +118,7 @@ function getQueuePrintParameters($db, $queue)
 function handleCloudPRNTGetJob($db)
 {	
 	
-    $mac = $_GET['mac'];
-    if(!empty($mac)){
+    if(isset($_GET['mac']) && isset($_GET['type'])){
 	    list($position, $queue, $width) = getDevicePrintingRequired($db, $mac);
 	    updateQueueHeader($db,$queue);
 
