@@ -48,7 +48,7 @@ function getCPConvertedJob($inputFile, $outputFormat, $deviceWidth, $outputFile)
 
     $options = $options . " scale-to-fit dither ";
 
-    system($cputilpath . " " . $options . " decode \"" . $outputFormat . "\" \"" . $inputFile . "\" \"" . $outputFile . "\"", $retval);
+    \system($cputilpath . " " . $options . " decode \"" . $outputFormat . "\" \"" . $inputFile . "\" \"" . $outputFile . "\"", $retval);
 }
 
 /*
@@ -117,12 +117,15 @@ function getQueuePrintParameters($db, $queue)
 
 function handleCloudPRNTGetJob($db)
 {	
-	
-    if(isset($_GET['mac']) && isset($_GET['type'])){
+    if(isset($_GET['mac'])){
 	    list($position, $queue, $width) = getDevicePrintingRequired($db, $_GET['mac']);
 	    updateQueueHeader($db,$queue);
 
-	    $content_type = $_GET['type'];    // determine the media type that the cloudPRNT device is requesting
+	    $content_type = $_GET['type']; 
+	    if(!isset($content_type)){
+	        $content_type = 'application/vnd.star.starprnt';
+	    }
+	    // determine the media type that the cloudPRNT device is requesting
 	    // and set it as the content type for this GET response
 	    // create temporary files for storing the source print job and the version converted to the format requested by the cloudprnt device
 	    // NOTE: using temporary files is usually very fast, because they will be generated in /tmp which is generally a RAM based filesystem
@@ -156,6 +159,9 @@ function handleCloudPRNTGetJob($db)
 	    $invoice_id = $db->query("SELECT current_invoice FROM Queues WHERE id = {$queue}")->fetchArray()['current_invoice'];
 	    $db->query("DELETE FROM `Invoices` WHERE id = {$invoice_id}");
     }
+    // echo 'invalid mac address';
+    http_response_code(400);
+    die();
 }
 
 
@@ -166,7 +172,7 @@ function updateQueueHeader($db, int $queue)
     if (isset($results)) {
         $row = $results->fetchArray();    // fetch next row
         if(empty($row)){
-            http_response_code(403);
+            http_response_code(400);
             die();
         }
         if (isset($row) && !empty($row)) {
@@ -212,10 +218,9 @@ function getCPSupportedOutputs($input)
 function getDevicePrintingRequired($db, $mac)
 {
     $results = $db->query("SELECT Printing, QueueID, DotWidth FROM Devices WHERE DeviceMac = '" . $mac . "'");
-
     if (isset($results)) {
         $row = $results->fetchArray();    // fetch next row
-
+        
         if (!isset($row) || gettype($row) == 'boolean' || (count( $row ) < 1) ) {
              http_response_code(400);
              die();
