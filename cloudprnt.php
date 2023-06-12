@@ -159,9 +159,6 @@ function handleCloudPRNTGetJob($db)
 	    $invoice_id = $db->query("SELECT current_invoice FROM Queues WHERE id = {$queue}")->fetchArray()['current_invoice'];
 	    $db->query("DELETE FROM `Invoices` WHERE id = {$invoice_id}");
     }
-    // echo 'invalid mac address';
-    http_response_code(400);
-    die();
 }
 
 
