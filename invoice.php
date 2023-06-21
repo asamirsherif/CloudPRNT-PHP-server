@@ -2,9 +2,10 @@
 // Sample for querying the database, managing queue of job data information
 
 function addInvoice($db, $content, $footer, $queue_id)
-{
-    $affected = $db->query("INSERT INTO `Invoices`(content,footer,queue_id) VALUES ('{$content}',{$footer},'{$queue_id}');");
-
+{   
+    
+    $affected = $db->query("INSERT INTO `Invoices`(content,footer,queue_id) VALUES ('{$content}','{$footer}','{$queue_id}');");
+    var_dump($affected);
     if (!isset($affected)) {
         http_response_code(500);
     }
