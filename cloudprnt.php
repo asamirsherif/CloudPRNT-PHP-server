@@ -333,7 +333,7 @@ function handleCloudPRNTPoll($db)
             // No client action is needed, so check the database to see if a ticket has been requested
             list($printing, $queue, $dotwidth) = getDevicePrintingRequired($db, $parsed['printerMAC']);
 
-            if (isset($printing) && !empty($printing) && isset($queue)) {
+            if (isset($printing) && isset($queue)) {
                 // a ticket has been requested, so let the device know that printing is needed
                 $pollResponse['jobReady'] = true;
 
