@@ -121,11 +121,9 @@ function handleCloudPRNTGetJob($db)
 	    list($position, $queue, $width) = getDevicePrintingRequired($db, $_GET['mac']);
 	    updateQueueHeader($db,$queue);
 
-        $content_type = 'application/vnd.star.starprnt';
-
 	    $content_type = $_GET['type']; 
-	    if(isset($_GET['type'])){
-	        $content_type = $_GET['type'];
+	    if(!isset($content_type)){
+	        $content_type = 'application/vnd.star.starprnt';
 	    }
 	    // determine the media type that the cloudPRNT device is requesting
 	    // and set it as the content type for this GET response
@@ -349,7 +347,6 @@ function handleCloudPRNTPoll($db)
 
     header("Content-Type: application/json");
     print_r(json_encode($pollResponse));
-    error_log(json_encode($pollResponse));
 }
 
 /*
