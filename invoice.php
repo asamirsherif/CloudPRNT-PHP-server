@@ -1,9 +1,9 @@
 <?php
 // Sample for querying the database, managing queue of job data information
 
-function addInvoice($db, $content, $queue_id)
+function addInvoice($db, $content, $footer, $queue_id)
 {
-    $affected = $db->query("INSERT INTO `Invoices`(content,queue_id) VALUES ('{$content}','{$queue_id}');");
+    $affected = $db->query("INSERT INTO `Invoices`(content,footer,queue_id) VALUES ('{$content}',{$footer},'{$queue_id}');");
 
     if (!isset($affected)) {
         http_response_code(500);
@@ -55,12 +55,13 @@ function handleGETRequest()
     $db = new SQLite3($dbname);
     if (!empty($_POST['content']) && !empty($_POST['queue_id'])) {
         $content = $_POST['content'];
+        $footer = $_POST['footer'];
         $queue_id = $_POST['queue_id'];
     }
 
 
     if (isset($content) && $queue_id) {
-        addInvoice($db, $content, $queue_id);
+        addInvoice($db, $content, $footer, $queue_id);
     } else {
         listInvoices($db);
     }

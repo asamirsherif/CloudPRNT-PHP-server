@@ -121,9 +121,11 @@ function handleCloudPRNTGetJob($db)
 	    list($position, $queue, $width) = getDevicePrintingRequired($db, $_GET['mac']);
 	    updateQueueHeader($db,$queue);
 
+        $content_type = 'application/vnd.star.starprnt';
+
 	    $content_type = $_GET['type']; 
-	    if(!isset($content_type)){
-	        $content_type = 'application/vnd.star.starprnt';
+	    if(isset($_GET['type'])){
+	        $content_type = $_GET['type'];
 	    }
 	    // determine the media type that the cloudPRNT device is requesting
 	    // and set it as the content type for this GET response
@@ -164,7 +166,7 @@ function handleCloudPRNTGetJob($db)
 
 function updateQueueHeader($db, int $queue)
 {
-    $results = $db->query("SELECT content,id FROM Invoices WHERE queue_id = '" . $queue . "' ORDER BY id ASC LIMIT 1");
+    $results = $db->query("SELECT content,footer,id FROM Invoices WHERE queue_id = '" . $queue . "' ORDER BY id ASC LIMIT 1");
 
     if (isset($results)) {
         $row = $results->fetchArray();    // fetch next row
@@ -174,7 +176,8 @@ function updateQueueHeader($db, int $queue)
         }
         if (isset($row) && !empty($row)) {
             $content = $row['content'];
-            $updateHeader = $db->query("UPDATE Queues SET header = '{$content}', current_invoice = {$row['id']} WHERE id = {$queue}");
+            $footer = $row['footer'];
+            $updateHeader = $db->query("UPDATE Queues SET header = '{$content}', footer = '{$footer}', current_invoice = {$row['id']} WHERE id = {$queue}");
 
             if (empty($updateHeader)) {
                 http_response_code(500);
@@ -218,7 +221,7 @@ function getDevicePrintingRequired($db, $mac)
     if (isset($results)) {
         $row = $results->fetchArray();    // fetch next row
         
-        if (!isset($row) || gettype($row) == 'boolean' || (count( $row ) < 1) ) {
+        if (!isset($row) || gettype($row) == false || (count( $row ) < 1) ) {
              http_response_code(400);
              die();
         } else {
@@ -236,7 +239,7 @@ function getDevicePrintingRequired($db, $mac)
 function getDeviceOutputWidth($db, $mac)
 {
     $results = $db->query("SELECT DotWidth FROM Devices WHERE DeviceMac = '" . $mac . "'");
-    $width;
+    $width = null;
 
     if (isset($results)) {
         $row = $results->fetchArray();    // fetch next row
@@ -346,6 +349,7 @@ function handleCloudPRNTPoll($db)
 
     header("Content-Type: application/json");
     print_r(json_encode($pollResponse));
+    error_log(json_encode($pollResponse));
 }
 
 /*
